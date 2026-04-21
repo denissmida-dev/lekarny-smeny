@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plánování směn – Lékárna</title>
+    <style>
+        /* ── BENU brand palette ───────────────────
+           Primary green  #006633
+           Mid green      #00884A
+           Light green    #E8F4ED
+           Very light     #F2F8F4
+           Text dark      #1A2E1F
+           Text muted     #5A7260
+           Border         #C8DDD0
+        ────────────────────────────────────────── */
+        :root {
+            --green:        #006633;
+            --green-dark:   #004d26;
+            --green-mid:    #00884A;
+            --green-light:  #E8F4ED;
+            --green-xlight: #F2F8F4;
+            --morning-bg:     #DBEAFE;
+            --morning-text:   #1D4ED8;
+            --morning-border: #93C5FD;
+            --afternoon-bg:   #FED7AA;
+            --afternoon-text: #C2410C;
+            --afternoon-border:#FDBA74;
+            --celyday-bg:     #EDE9FE;
+            --celyday-text:   #6D28D9;
+            --celyday-border: #C4B5FD;
+            --vacation-bg:    #F1F5F9;
+            --vacation-text:  #475569;
+            --vacation-border:#CBD5E1;
+            --holiday-bg:     #FFF1F2;
+            --holiday-text:   #BE123C;
+            --bg:             #F2F8F4;
+            --white:          #FFFFFF;
+            --border:         #C8DDD0;
+            --border-light:   #E2EDE6;
+            --text:           #1A2E1F;
+            --muted:          #5A7260;
+            --shadow:         rgba(0,102,51,.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ═══════════════════════════════════════
+           HEADER
+        ═══════════════════════════════════════ */
+        .header {
+            background: var(--green);
+            color: #fff;
+            padding: 0 28px;
+            height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 3px 10px rgba(0,0,0,.18);
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+
+        .lekarny-logo {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.12);
+            border: 1px solid rgba(255,255,255,.22);
+            border-radius: 8px;
+            padding: 5px 14px;
+        }
+        .lekarny-cross {
+            font-size: 1.3rem; font-weight: 900; color: #fff;
+            line-height: 1;
+        }
+        .lekarny-name {
+            font-size: 1.1rem; font-weight: 800;
+            letter-spacing: .03em; color: #fff;
+        }
+
+        .header-divider {
+            width: 1px; height: 32px;
+            background: rgba(255,255,255,.28);
+        }
+
+        .header-title h1 { font-size: 1rem; font-weight: 600; opacity: .95; }
+        .header-title p  { font-size: .7rem; opacity: .6; margin-top: 1px; }
+
+        /* Month navigation */
+        .month-nav { display: flex; align-items: center; gap: 8px; }
+        .nav-btn {
+            background: rgba(255,255,255,.15); color: #fff;
+            border: 1px solid rgba(255,255,255,.28);
+            width: 34px; height: 34px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; font-weight: 700;
+            transition: background .15s;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,.28); }
+        .month-selectors { display: flex; gap: 6px; }
+        .month-select, .year-select {
+            background: rgba(255,255,255,.15); color: #fff;
+            border: 1px solid rgba(255,255,255,.3);
+            padding: 5px 10px; border-radius: 8px;
+            font-size: .88rem; font-weight: 600; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+            text-align: center;
+        }
+        .month-select option, .year-select option { background: var(--green-dark); color: #fff; }
+
+        /* ═══════════════════════════════════════
+           TOOLBAR
+        ═══════════════════════════════════════ */
+        .toolbar {
+            background: var(--white);
+            border-bottom: 2px solid var(--border-light);
+            padding: 10px 28px;
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 8px 14px; border-radius: 8px; border: none;
+            cursor: pointer; font-size: .82rem; font-weight: 600;
+            transition: all .15s; white-space: nowrap;
+            letter-spacing: .01em;
+        }
+        .btn-primary { background: var(--green); color: #fff; }
+        .btn-primary:hover { background: var(--green-dark); }
+        .btn-green2  { background: var(--green-mid); color: #fff; }
+        .btn-green2:hover { background: #007040; }
+        .btn-warning { background: #D97706; color: #fff; }
+        .btn-warning:hover { background: #B45309; }
+        .btn-pdf     { background: #DC2626; color: #fff; }
+        .btn-pdf:hover { background: #B91C1C; }
+        .btn-outline {
+            background: transparent; color: var(--green);
+            border: 1.5px solid var(--green);
+        }
+        .btn-outline:hover { background: var(--green-light); }
+        .toolbar-sep { width: 1px; height: 26px; background: var(--border); margin: 0 4px; }
+
+        /* Legend */
+        .legend { display: flex; gap: 12px; margin-left: auto; align-items: center; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-size: .74rem; color: var(--muted); }
+        .leg-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 22px; height: 20px; border-radius: 4px; padding: 0 5px;
+            font-size: .7rem; font-weight: 700;
+        }
+        .leg-R  { background: var(--morning-bg);   color: var(--morning-text);   border: 1.5px solid var(--morning-border); }
+        .leg-O  { background: var(--afternoon-bg); color: var(--afternoon-text); border: 1.5px solid var(--afternoon-border); }
+        .leg-CD { background: var(--celyday-bg);   color: var(--celyday-text);   border: 1.5px solid var(--celyday-border); }
+        .leg-V  { background: var(--vacation-bg);  color: var(--vacation-text);  border: 1.5px solid var(--vacation-border); }
+        .leg-H { background: var(--holiday-bg);   color: var(--holiday-text);   border: 1.5px solid #FECDD3; font-size: .63rem; }
+        .leg-lock { font-size: 9px; background: #fff; border: 1.5px dashed #94A3B8; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; }
+
+        /* ═══════════════════════════════════════
+           SCHEDULE TABLE
+        ═══════════════════════════════════════ */
+        .main-content { padding: 16px 28px; overflow-x: auto; }
+
+        .table-wrapper {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px var(--shadow);
+            border: 1px solid var(--border-light);
+            min-width: 680px;
+        }
+
+        .schedule-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .col-name   { width: 78px; }
+        /* .col-day-col columns share remaining space equally */
+        .col-cnt    { width: 26px; }
+        .col-status { width: 26px; }
+
+        .schedule-table thead tr {
+            background: var(--green);
+        }
+        .schedule-table th {
+            padding: 6px 3px;
+            font-size: .65rem; font-weight: 700;
+            color: rgba(255,255,255,.9);
+            letter-spacing: .03em;
+            text-align: center; white-space: nowrap;
+            border-right: 1px solid rgba(255,255,255,.1);
+        }
+        .schedule-table th:last-child { border-right: none; }
+        .schedule-table th.th-name { text-align: left; padding-left: 8px; font-size: .7rem; }
+        .schedule-table th.fri-header { color: #FFD580; }
+        .schedule-table th.holiday-header { background: rgba(190,18,60,.35) !important; }
+        .schedule-table th.th-week-start { border-left: 2px solid rgba(255,255,255,.3) !important; }
+        .th-day  { display: block; font-size: .6rem; opacity: .85; }
+        .th-date { display: block; font-size: .68rem; font-weight: 800; }
+
+        .schedule-table td {
+            padding: 4px 3px;
+            border-bottom: 1px solid var(--border-light);
+            text-align: center; vertical-align: middle;
+        }
+        .schedule-table tr:last-child td { border-bottom: none; }
+        .schedule-table tr:nth-child(even) td { background: var(--green-xlight); }
+
+        .schedule-table td.friday-col  { background: #FFFBEB !important; }
+        .schedule-table td.holiday-col { background: var(--holiday-bg) !important; }
+        .schedule-table td.empty-day-cell { background: #F4F7F5 !important; }
+
+        /* Week date header rows */
+        .week-date-row td {
+            background: var(--green-light) !important;
+            border-top: 2px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 5px 4px;
+        }
+        .week-date-row:first-child td { border-top: none; }
+        .week-date-label { text-align: left; padding-left: 8px !important; }
+        .week-date-cell  { text-align: center; }
+        .wdc-date    { display: block; font-size: .76rem; font-weight: 800; color: var(--green); }
+        .wdc-holiday { display: block; font-size: .56rem; color: var(--holiday-text);
+                       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .emp-name-cell {
+            font-size: .82rem; font-weight: 700;
+            padding: 4px 8px; text-align: left; white-space: nowrap;
+            color: var(--text);
+            background: var(--green-xlight) !important;
+            border-right: 2px solid var(--border-light);
+        }
+        .count-row td { background: var(--green-xlight) !important; }
+        .count-label  { font-size: .76rem; font-weight: 700; color: var(--muted); }
+
+        /* ── SHIFT CELL ─────────────────────────── */
+        .shift-cell {
+            position: relative;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .badge-wrap {
+            position: relative;
+            display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .shift-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 27px; border-radius: 7px;
+            font-size: .86rem; font-weight: 800;
+            cursor: pointer; user-select: none;
+            border: 1.5px solid transparent;
+            transition: transform .1s, box-shadow .1s;
+        }
+        .shift-badge:hover  { transform: scale(1.13); box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+        .shift-badge:active { transform: scale(.95); }
+        .shift-R     { background: var(--morning-bg);   color: var(--morning-text);   border-color: var(--morning-border); }
+        .shift-O     { background: var(--afternoon-bg); color: var(--afternoon-text); border-color: var(--afternoon-border); }
+        .shift-CD    { background: var(--celyday-bg);   color: var(--celyday-text);   border-color: var(--celyday-border); }
+        .shift-V     { background: var(--vacation-bg);  color: var(--vacation-text);  border-color: var(--vacation-border); }
+        .shift-empty { background: #F8FAF8; color: #B0C4B8; border-color: #D4E4DA; font-size: .68rem; }
+        .shift-badge.is-locked { border-style: dashed; cursor: not-allowed; }
+        .shift-badge.is-locked:hover { transform: none; box-shadow: none; }
+
+        /* lock button – top-right */
+        .lock-btn {
+            position: absolute; top: -5px; right: -5px;
+            width: 15px; height: 15px; border-radius: 50%;
+            border: none; background: #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,.25);
+            cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+            font-size: 9px; line-height: 1; padding: 0;
+            transition: transform .12s; z-index: 2;
+        }
+        .lock-btn:hover { transform: scale(1.2); }
+        .shift-cell.has-shift:hover .lock-btn { display: flex; }
+        .lock-btn.locked { display: flex; }
+
+        /* note button – top-left (pencil) */
+        .note-btn {
+            position: absolute; top: -5px; left: -5px;
+            width: 15px; height: 15px; border-radius: 50%;
+            border: none; background: #fff;
+            box-shadow: 0 1px 4px rgba(0,0,0,.22);
+            cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+            font-size: 8px; line-height: 1; padding: 0;
+            transition: transform .12s; z-index: 2;
+        }
+        .note-btn:hover { transform: scale(1.2); }
+        .shift-cell.has-shift:hover .note-btn { display: flex; }
+        .note-btn.has-note { display: flex; background: #FEF9C3; }
+
+        /* note chip – absolutely positioned to the right of the badge */
+        .note-chip {
+            position: absolute;
+            left: calc(100% + 4px); top: 50%; transform: translateY(-50%);
+            white-space: nowrap; z-index: 10;
+            font-size: .62rem; color: #713F12;
+            background: #FEF9C3; border: 1px solid #FDE68A;
+            border-radius: 4px; padding: 2px 6px;
+            max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+            line-height: 1.35;
+            cursor: pointer; transition: background .12s;
+            pointer-events: auto;
+        }
+        .note-chip:hover { background: #FEF08A; }
+
+        /* ── COUNT / STATUS ─────────────────────── */
+        .cnt-cell { font-size: .78rem; font-weight: 700; padding: 4px 5px; }
+        .cnt-R { color: var(--morning-text); }
+        .cnt-O { color: var(--afternoon-text); }
+        .cnt-ok   { }
+        .cnt-warn { background: #FEE2E2; color: #DC2626; border-radius: 4px; padding: 2px 5px; }
+        .status-cell { font-size: .92rem; padding: 4px 6px; }
+
+        /* ═══════════════════════════════════════
+           STATS SECTION
+        ═══════════════════════════════════════ */
+        .stats-section { padding: 0 28px 28px; }
+        .stats-title {
+            font-size: .75rem; font-weight: 700; color: var(--muted);
+            text-transform: uppercase; letter-spacing: .07em;
+            margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .stats-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); gap: 12px; }
+
+        .stat-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 14px 15px;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border-light);
+        }
+        .stat-card-total {
+            background: linear-gradient(140deg, var(--green) 0%, var(--green-dark) 100%);
+            color: #fff; border-color: transparent;
+        }
+        .stat-emp-name {
+            font-weight: 700; font-size: .86rem; margin-bottom: 8px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            color: var(--text);
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .stat-card-total .stat-emp-name { color: #fff; border-color: rgba(255,255,255,.2); }
+
+        /* shift time block */
+        .stat-times {
+            background: var(--green-xlight);
+            border: 1px solid var(--border);
+            border-radius: 6px; padding: 5px 8px;
+            margin-bottom: 8px; font-size: .7rem; line-height: 1.7;
+        }
+        .stat-card-total .stat-times { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); }
+        .st-row { display: flex; align-items: baseline; gap: 4px; font-weight: 600; }
+        .st-row span { font-weight: 400; color: var(--muted); }
+        .stat-card-total .st-row span { color: rgba(255,255,255,.7); }
+        .st-R { color: var(--morning-text); }
+        .st-O { color: var(--afternoon-text); }
+        .st-fri { font-size: .63rem; }
+
+        .stat-row {
+            display: flex; justify-content: space-between;
+            font-size: .74rem; color: var(--muted); margin-bottom: 3px;
+        }
+        .stat-row span:last-child { font-weight: 600; color: var(--text); }
+        .stat-card-total .stat-row { color: rgba(255,255,255,.65); }
+        .stat-card-total .stat-row span:last-child { color: #fff; }
+
+        .stat-shifts { display: flex; gap: 6px; margin-top: 8px; }
+        .ss-badge { flex:1; text-align:center; padding:3px 2px; border-radius:5px; font-size:.7rem; font-weight:600; }
+        .ss-R  { background: var(--morning-bg);   color: var(--morning-text); }
+        .ss-O  { background: var(--afternoon-bg); color: var(--afternoon-text); }
+        .ss-CD { background: var(--celyday-bg);   color: var(--celyday-text); }
+
+        .prog-bar { height: 5px; background: var(--border); border-radius: 3px; margin-top: 8px; overflow: hidden; }
+        .stat-card-total .prog-bar { background: rgba(255,255,255,.22); }
+        .prog-fill { height:100%; border-radius:3px; transition: width .4s ease; background: var(--green); }
+        .prog-fill.over { background: #EF4444; }
+        .stat-card-total .prog-fill { background: rgba(255,255,255,.8); }
+
+        /* ═══════════════════════════════════════
+           NOTE EDITOR
+        ═══════════════════════════════════════ */
+        #noteEditor {
+            position: fixed; z-index: 3000;
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px;
+            box-shadow: 0 8px 28px rgba(0,0,0,.15);
+            width: 230px; display: none;
+        }
+        #noteEditor .ne-title {
+            font-size: .77rem; font-weight: 700; color: var(--text); margin-bottom: 7px;
+        }
+        #noteTextarea {
+            width: 100%; height: 68px; padding: 6px 8px;
+            border: 1.5px solid var(--border); border-radius: 6px;
+            font-size: .8rem; font-family: inherit; resize: none; color: var(--text);
+            transition: border-color .15s;
+        }
+        #noteTextarea:focus { outline: none; border-color: var(--green); }
+        .ne-hint { font-size: .65rem; color: var(--muted); margin-top: 3px; }
+        .ne-actions { display: flex; gap: 5px; margin-top: 8px; justify-content: flex-end; }
+        .ne-btn { padding: 4px 10px; border-radius: 5px; border: none; font-size: .74rem; font-weight: 600; cursor: pointer; }
+        .ne-btn-del    { background: #FEE2E2; color: #DC2626; }
+        .ne-btn-del:hover    { background: #FECACA; }
+        .ne-btn-cancel { background: var(--bg); color: var(--muted); }
+        .ne-btn-cancel:hover { background: var(--border); }
+        .ne-btn-save   { background: var(--green); color: #fff; }
+        .ne-btn-save:hover   { background: var(--green-dark); }
+
+        /* ═══════════════════════════════════════
+           MODAL
+        ═══════════════════════════════════════ */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.45); z-index: 1000;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(2px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--white); border-radius: 14px; padding: 24px;
+            width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,.18);
+            border: 1px solid var(--border-light);
+        }
+        .modal-sm { width: 420px; }
+        .modal-hdr {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 18px; padding-bottom: 14px;
+            border-bottom: 2px solid var(--green-light);
+        }
+        .modal-title { font-size: 1.05rem; font-weight: 700; color: var(--green); }
+        .modal-x {
+            background: none; border: none; font-size: 1.1rem;
+            cursor: pointer; color: var(--muted); padding: 3px 7px; border-radius: 5px;
+        }
+        .modal-x:hover { background: var(--bg); }
+        .emp-card {
+            border: 1.5px solid var(--border); border-radius: 10px;
+            padding: 13px 15px; margin-bottom: 11px;
+            transition: border-color .15s, opacity .15s;
+            cursor: default; position: relative;
+        }
+        .emp-card:focus-within { border-color: var(--green); }
+        .emp-card.drag-over { border-color: var(--green); background: var(--green-light); }
+        .emp-card.dragging { opacity: .4; }
+        .emp-card-title {
+            font-size: .78rem; font-weight: 700; color: var(--green);
+            margin-bottom: 9px; text-transform: uppercase; letter-spacing: .04em;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .drag-handle {
+            cursor: grab; color: var(--muted); font-size: 1rem; line-height: 1;
+            user-select: none; padding: 0 2px;
+        }
+        .drag-handle:active { cursor: grabbing; }
+        .form-row { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+        .form-label { font-size: .8rem; color: var(--muted); width: 130px; flex-shrink: 0; }
+        .form-input {
+            flex: 1; padding: 7px 10px;
+            border: 1.5px solid var(--border); border-radius: 7px;
+            font-size: .875rem; color: var(--text);
+            transition: border-color .15s;
+        }
+        .form-input:focus { outline: none; border-color: var(--green); }
+        .form-hint { font-size: .72rem; color: var(--muted); }
+        .modal-ftr {
+            display: flex; gap: 8px; justify-content: flex-end;
+            margin-top: 18px; padding-top: 14px;
+            border-top: 1px solid var(--border-light);
+        }
+        .modal-ftr-left { margin-right: auto; }
+        .emp-remove-btn {
+            position: absolute; top: 8px; right: 10px;
+            background: none; border: none; cursor: pointer;
+            font-size: .8rem; color: #CBD5E1; padding: 2px 4px; line-height: 1;
+            border-radius: 4px; transition: color .15s, background .15s;
+        }
+        .emp-remove-btn:hover { color: #EF4444; background: #FEF2F2; }
+
+        /* ═══════════════════════════════════════
+           PRINT / PDF
+        ═══════════════════════════════════════ */
+        .print-only { display: none; }
+
+        @media print {
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+            @page {
+                size: A4 landscape;
+                margin: 7mm 7mm;
+            }
+
+            body { background: #fff !important; font-size: 9px; }
+
+            /* hide interactive UI */
+            .header, .toolbar, #noteEditor, .modal-overlay,
+            .lock-btn, .note-btn { display: none !important; }
+
+            /* show print header */
+            .print-only { display: flex !important; }
+
+            /* remove excess spacing */
+            .main-content  { padding: 0; overflow: visible; }
+            .stats-section { padding: 4px 0 0; page-break-before: always; }
+
+            /* table */
+            .table-wrapper {
+                box-shadow: none !important;
+                border: 1px solid #aaa !important;
+                border-radius: 4px !important;
+                overflow: visible;
+                min-width: unset;
+            }
+            .table-wrapper { height: 172mm; display: flex; flex-direction: column; }
+            .schedule-table { height: 100%; }
+            .schedule-table th { font-size: .52rem; padding: 3px 1px; }
+            .schedule-table td { padding: 2px 1px; border-color: #ddd; }
+            .shift-badge { width: 22px; height: 18px; font-size: .62rem; border-radius: 3px; }
+            .note-chip { font-size: .5rem; max-width: 70px; padding: 1px 3px; }
+            .emp-name-cell { font-size: .62rem; padding: 2px 4px; }
+            .cnt-cell, .status-cell { font-size: .52rem; }
+            .th-day  { font-size: .5rem; }
+            .th-date { font-size: .58rem; }
+            .holiday-name { font-size: .5rem; max-width: 40px; }
+
+            tr { page-break-inside: avoid; }
+            thead { display: table-header-group; }
+
+            /* stats */
+            .stats-title { font-size: .6rem; margin-bottom: 4px; }
+            .stats-grid {
+                display: grid !important;
+                grid-template-columns: repeat(6, 1fr) !important;
+                gap: 4px !important;
+            }
+            .stat-card {
+                box-shadow: none !important;
+                border: 1px solid #bbb !important;
+                padding: 5px 6px !important;
+                border-radius: 4px !important;
+            }
+            .stat-times { padding: 2px 4px; font-size: .55rem; }
+            .stat-emp-name { font-size: .65rem; margin-bottom: 3px; padding-bottom: 3px; }
+            .stat-row { font-size: .57rem; margin-bottom: 1px; }
+            .stat-shifts { margin-top: 3px; }
+            .ss-badge { font-size: .55rem; padding: 1px 2px; }
+            .prog-bar { height: 3px; margin-top: 4px; }
+
+            /* ensure green prints */
+            .schedule-table thead tr { background: #006633 !important; }
+            .stat-card-total { background: #006633 !important; }
+        }
+
+        /* print header (visible only when printing) */
+        .print-header {
+            align-items: center;
+            gap: 16px;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            border-bottom: 3px solid var(--green);
+        }
+        .ph-logo {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--green); color: #fff;
+            padding: 6px 14px; border-radius: 6px;
+            font-weight: 800; font-size: 1rem; letter-spacing: .05em; font-style: italic;
+        }
+        .ph-meta h2 { font-size: .95rem; font-weight: 700; color: var(--text); }
+        .ph-meta p  { font-size: .78rem; color: var(--muted); margin-top: 1px; }
+
+        @media (max-width: 700px) {
+            .header { padding: 0 14px; }
+            .lekarny-name, .header-divider, .header-title p { display: none; }
+            .toolbar { padding: 8px 14px; }
+            .main-content, .stats-section { padding: 10px 14px; }
+            .legend { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Print header (hidden on screen, visible when printing) ── -->
+<div class="print-only print-header">
+    <div class="ph-logo">✚ Lékárna</div>
+    <div class="ph-meta">
+        <h2>Plán směn – Lékárna</h2>
+        <p id="printMonthLabel"></p>
+    </div>
+</div>
+
+<div id="app">
+
+    <header class="header no-print">
+        <div class="header-left">
+            <div class="lekarny-logo">
+                <span class="lekarny-cross">✚</span>
+                <span class="lekarny-name">Lékárna</span>
+            </div>
+            <div class="header-divider"></div>
+            <div class="header-title">
+                <h1>Plánování směn</h1>
+                <p>Lékárna</p>
+            </div>
+        </div>
+        <div class="month-nav">
+            <button class="nav-btn" id="prevMonth">&#8249;</button>
+            <div class="month-selectors">
+                <select class="month-select" id="monthSelect"></select>
+                <select class="year-select"  id="yearSelect"></select>
+            </div>
+            <button class="nav-btn" id="nextMonth">&#8250;</button>
+        </div>
+    </header>
+
+    <div class="toolbar no-print">
+        <button class="btn btn-outline" id="empSettingsBtn">&#9881;&#65039; Zaměstnanci</button>
+        <div class="toolbar-sep"></div>
+        <button class="btn btn-green2" id="autoGenBtn">&#10024; Naplánovat automaticky</button>
+        <button class="btn btn-warning" id="clearBtn">&#128465;&#65039; Vymazat měsíc</button>
+        <div class="toolbar-sep"></div>
+        <button class="btn btn-pdf" id="printBtn">&#128438; Tisk / PDF</button>
+        <div class="legend">
+            <div class="legend-item"><span class="leg-badge leg-R">R</span><span>Ranní</span></div>
+            <div class="legend-item"><span class="leg-badge leg-O">O</span><span>Odpolední</span></div>
+            <div class="legend-item"><span class="leg-badge leg-CD">CD</span><span>Celý den</span></div>
+            <div class="legend-item"><span class="leg-badge leg-V">V</span><span>Volno</span></div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="table-wrapper">
+            <table class="schedule-table">
+                <colgroup id="tableColgroup"></colgroup>
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="stats-section">
+        <div class="stats-title">&#128202; Fond pracovní doby &mdash; <span id="statsMonthLabel"></span></div>
+        <div class="stats-grid" id="statsGrid"></div>
+    </div>
+</div>
+
+<!-- ── Note editor ─────────────────────────── -->
+<div id="noteEditor">
+    <div class="ne-title" id="noteEditorTitle">&#9998; Poznámka</div>
+    <textarea id="noteTextarea" maxlength="120" placeholder="Zadejte poznámku…"></textarea>
+    <div class="ne-hint">Max. 120 znaků · Ctrl+Enter = uložit</div>
+    <div class="ne-actions">
+        <button class="ne-btn ne-btn-del"    id="noteDeleteBtn">Smazat</button>
+        <button class="ne-btn ne-btn-cancel" id="noteCancelBtn">Zrušit</button>
+        <button class="ne-btn ne-btn-save"   id="noteSaveBtn">Uložit</button>
+    </div>
+</div>
+
+<!-- ── Employee modal ──────────────────────── -->
+<div class="modal-overlay" id="empModal">
+    <div class="modal">
+        <div class="modal-hdr">
+            <span class="modal-title">&#9881;&#65039; Nastavení zaměstnanců</span>
+            <button class="modal-x" id="closeEmpModal">&#10005;</button>
+        </div>
+        <div id="empFormContainer"></div>
+        <div class="modal-ftr">
+            <button class="btn btn-outline modal-ftr-left" id="addEmpBtn">&#43; Přidat zaměstnance</button>
+            <button class="btn btn-outline" id="cancelEmpBtn">Zrušit</button>
+            <button class="btn btn-primary" id="saveEmpBtn">&#128190; Uložit</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Confirm modal ───────────────────────── -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal modal-sm">
+        <div class="modal-hdr">
+            <span class="modal-title" id="confirmTitle"></span>
+            <button class="modal-x" id="closeConfirmModal">&#10005;</button>
+        </div>
+        <p id="confirmMsg" style="color:var(--muted);font-size:.88rem;line-height:1.6;margin-bottom:4px;"></p>
+        <div class="modal-ftr">
+            <button class="btn btn-outline" id="confirmCancel">Zrušit</button>
+            <button class="btn btn-primary" id="confirmOk">Potvrdit</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════ */
+const MONTHS = ['Leden','Únor','Březen','Duben','Květen','Červen',
+                'Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+const DAYS   = ['Ne','Po','Út','St','Čt','Pá','So'];
+const SHIFT_CYCLE = ['','R','O','CD','V'];
+const MIN_R = 3, MIN_O = 2;
+const STORAGE_KEY = 'lekarnaSmeny_v5';
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+let state = {
+    year:  new Date().getFullYear(),
+    month: new Date().getMonth(),
+    employees: [
+        {id:1, name:'Terez',   weeklyHours:40},
+        {id:2, name:'Radka',   weeklyHours:40},
+        {id:3, name:'Denis',   weeklyHours:30},
+        {id:4, name:'Maruška', weeklyHours:40},
+        {id:5, name:'Denisa',  weeklyHours:40},
+    ],
+    shifts: {},
+    locks:  {},
+    notes:  {},
+};
+
+/* ═══════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════ */
+function saveState(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function loadState(){
+    try {
+        const s = JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+        if(!s) return;
+        // Migrate from old keys (v4 and earlier)
+        const prev = ['lekarnaSmeny_v1','lekarnaSmeny_v2','lekarnaSmeny_v3','lekarnaSmeny_v4'];
+        state.employees = s.employees || state.employees;
+        state.shifts    = s.shifts    || {};
+        state.locks     = s.locks     || {};
+        state.notes     = s.notes     || {};
+        state.year      = s.year      || state.year;
+        state.month     = s.month     || state.month;
+        // Migrate employee names
+        const nameMap = {1:'Terez', 2:'Radka', 3:'Denis', 4:'Maruška', 5:'Denisa'};
+        state.employees.forEach(e=>{ if(nameMap[e.id]) e.name=nameMap[e.id]; });
+    } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════
+   PUBLIC HOLIDAYS – Czech Republic
+═══════════════════════════════════════════ */
+function easterSunday(Y){
+    const a=Y%19,b=Math.floor(Y/100),c=Y%100,d=Math.floor(b/4),e=b%4;
+    const f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3);
+    const h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4;
+    const l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);
+    const mo=Math.floor((h+l-7*m+114)/31), dy=((h+l-7*m+114)%31)+1;
+    return new Date(Y,mo-1,dy);
+}
+function getHolidays(year){
+    const h=new Map();
+    const add=(m,d,n)=>h.set(`${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`,n);
+    add(1,1,'Nový rok'); add(5,1,'Svátek práce'); add(5,8,'Den vítězství');
+    add(7,5,'Den Cyrila a Metoděje'); add(7,6,'Den Jana Husa');
+    add(9,28,'Den české státnosti'); add(10,28,'Den vzniku ČSR');
+    add(11,17,'Den svobody'); add(12,24,'Štědrý den');
+    add(12,25,'1. svátek vánoční'); add(12,26,'2. svátek vánoční');
+    const es=easterSunday(year);
+    const fmt=dt=>`${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+    const gf=new Date(es); gf.setDate(es.getDate()-2);
+    const em=new Date(es); em.setDate(es.getDate()+1);
+    h.set(fmt(gf),'Velký pátek'); h.set(fmt(em),'Velikonoční pondělí');
+    return h;
+}
+
+/* ═══════════════════════════════════════════
+   DATE & SHIFT HELPERS
+═══════════════════════════════════════════ */
+function dateKey(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function workingDays(year,month){
+    const days=[];
+    const n=new Date(year,month+1,0).getDate();
+    for(let d=1;d<=n;d++){
+        const w=new Date(year,month,d).getDay();
+        if(w>=1&&w<=5) days.push(d);
+    }
+    return days;
+}
+function dow(y,m,d)     { return new Date(y,m,d).getDay(); }
+function isFriday(y,m,d){ return dow(y,m,d)===5; }
+function isMonday(y,m,d){ return dow(y,m,d)===1; }
+
+/* Shift time calculation:
+   on-site = weeklyHours/5 + 0.5h break
+   R: starts 7:30, ends 7:30 + duration
+   O: ends 18:30 (Mon-Thu) or 17:30 (Fri), starts = 18:30 - duration  */
+function minsToTime(m){ return `${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`; }
+function getShiftInfo(weeklyHours, friday){
+    const durMins = Math.round((weeklyHours/5 + 0.5)*60);
+    const rStart  = 7*60+30;
+    const oEnd    = friday ? 17*60+30 : 18*60+30;
+    const oStart  = oEnd - durMins;
+    const cdHours = (oEnd - rStart)/60 - 0.5; // celý rozsah minus 30 min přestávka
+    return {
+        R:  { start:minsToTime(rStart), end:minsToTime(rStart+durMins), hours:durMins/60 },
+        O:  { start:minsToTime(oStart), end:minsToTime(oEnd),           hours:durMins/60 },
+        CD: { start:minsToTime(rStart), end:minsToTime(oEnd),           hours:cdHours    },
+    };
+}
+function shiftHours(shift,friday,weeklyHours){
+    if(!shift) return 0;
+    // V (Volno) = placená absence → počítá se jako plný pracovní den
+    if(shift==='V') return weeklyHours/5 + 0.5;
+    const info=getShiftInfo(weeklyHours,friday);
+    return info[shift]?info[shift].hours:0;
+}
+function fundHours(emp,year,month){
+    return workingDays(year,month).length*(emp.weeklyHours/5+0.5);
+}
+function fmtH(h){ return h.toFixed(1).replace('.',',')+'\u202Fh'; }
+
+/* ═══════════════════════════════════════════
+   LOCK HELPERS
+═══════════════════════════════════════════ */
+function isLocked(key,empId){ return !!(state.locks[key]&&state.locks[key][empId]); }
+function toggleLock(key,empId){
+    if(!state.locks[key]) state.locks[key]={};
+    if(state.locks[key][empId]){
+        delete state.locks[key][empId];
+        if(!Object.keys(state.locks[key]).length) delete state.locks[key];
+    } else {
+        if(!((state.shifts[key]||{})[empId])) return;
+        state.locks[key][empId]=true;
+    }
+    saveState(); render();
+}
+
+/* ═══════════════════════════════════════════
+   NOTE EDITOR
+═══════════════════════════════════════════ */
+let _nKey=null, _nEmpId=null;
+
+function openNoteEditor(key,empId,anchor,empName){
+    _nKey=key; _nEmpId=empId;
+    const note=(state.notes[key]||{})[empId]||'';
+    document.getElementById('noteTextarea').value=note;
+    document.getElementById('noteEditorTitle').textContent=`✏️ ${empName.split(' ')[0]}`;
+    document.getElementById('noteDeleteBtn').style.display=note?'':'none';
+    const ed=document.getElementById('noteEditor');
+    ed.style.display='block';
+    const r=anchor.getBoundingClientRect();
+    let top=r.bottom+6, left=r.left;
+    ed.style.top=top+'px'; ed.style.left=left+'px';
+    const er=ed.getBoundingClientRect();
+    if(er.right>window.innerWidth-8)   ed.style.left=(window.innerWidth-8-er.width)+'px';
+    if(er.bottom>window.innerHeight-8) ed.style.top=(r.top-er.height-6)+'px';
+    document.getElementById('noteTextarea').focus();
+}
+function saveCurrentNote(){
+    const text=document.getElementById('noteTextarea').value.trim();
+    if(!state.notes[_nKey]) state.notes[_nKey]={};
+    if(text){ state.notes[_nKey][_nEmpId]=text; }
+    else {
+        delete state.notes[_nKey][_nEmpId];
+        if(!Object.keys(state.notes[_nKey]).length) delete state.notes[_nKey];
+    }
+    closeNoteEditor(); saveState(); render();
+}
+function deleteCurrentNote(){
+    if(state.notes[_nKey]){
+        delete state.notes[_nKey][_nEmpId];
+        if(!Object.keys(state.notes[_nKey]).length) delete state.notes[_nKey];
+    }
+    closeNoteEditor(); saveState(); render();
+}
+function closeNoteEditor(){
+    document.getElementById('noteEditor').style.display='none';
+    _nKey=null; _nEmpId=null;
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+function initNav(){
+    const mSel=document.getElementById('monthSelect');
+    const ySel=document.getElementById('yearSelect');
+    MONTHS.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=m; mSel.appendChild(o); });
+    for(let y=2024;y<=2030;y++){ const o=document.createElement('option'); o.value=y; o.textContent=y; ySel.appendChild(o); }
+    syncNav();
+    document.getElementById('prevMonth').addEventListener('click',()=>{
+        if(state.month===0){state.month=11;state.year--;} else state.month--;
+        if(state.year<2024){state.year=2024;state.month=0;}
+        syncNav(); render(); saveState();
+    });
+    document.getElementById('nextMonth').addEventListener('click',()=>{
+        if(state.year===2030&&state.month===11) return;
+        if(state.month===11){state.month=0;state.year++;} else state.month++;
+        syncNav(); render(); saveState();
+    });
+    mSel.addEventListener('change',()=>{ state.month=+mSel.value; render(); saveState(); });
+    ySel.addEventListener('change',()=>{ state.year=+ySel.value; syncNav(); render(); saveState(); });
+}
+function syncNav(){
+    document.getElementById('monthSelect').value=state.month;
+    document.getElementById('yearSelect').value=state.year;
+}
+
+/* ═══════════════════════════════════════════
+   RENDER SCHEDULE
+   Layout: fixed 5 cols (Po–Pá), one week-block per week.
+   Each block: date-header row + employee rows + R/O/✓ count rows.
+═══════════════════════════════════════════ */
+function renderSchedule(){
+    const {year,month}=state;
+    const wDays=workingDays(year,month);
+    const holidays=getHolidays(year);
+
+    /* Group working days into weeks (Mon=0 … Fri=4) */
+    const weeks=[];
+    wDays.forEach(day=>{
+        const d=new Date(year,month,day);
+        const di=d.getDay()-1; // 0=Mon..4=Fri
+        const monTime=new Date(year,month,day-(di)).getTime();
+        let w=weeks.find(x=>x.monTime===monTime);
+        if(!w){ w={monTime,days:[null,null,null,null,null]}; weeks.push(w); }
+        w.days[di]=day;
+    });
+
+    /* colgroup: name col + 5 day cols */
+    const cg=document.getElementById('tableColgroup');
+    cg.innerHTML='<col class="col-name">'
+        +'<col class="col-day-col"><col class="col-day-col"><col class="col-day-col">'
+        +'<col class="col-day-col"><col class="col-day-col">';
+
+    /* thead: static day-name header */
+    const thead=document.getElementById('tableHead');
+    thead.innerHTML='';
+    const hr=document.createElement('tr');
+    ['','Pondělí','Úterý','Středa','Čtvrtek','Pátek'].forEach((txt,i)=>{
+        const th=document.createElement('th');
+        th.textContent=txt;
+        if(i===0) th.className='th-name';
+        if(i===5) th.classList.add('fri-header');
+        hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+
+    /* tbody */
+    const tbody=document.getElementById('tableBody');
+    tbody.innerHTML='';
+
+    weeks.forEach(week=>{
+        /* ── Date header row ── */
+        const dateRow=document.createElement('tr');
+        dateRow.className='week-date-row';
+        const tdLbl=document.createElement('td');
+        tdLbl.className='week-date-label';
+        dateRow.appendChild(tdLbl);
+        week.days.forEach((day,di)=>{
+            const td=document.createElement('td');
+            td.className='week-date-cell'+(di===4?' friday-col':'');
+            if(day){
+                const hdKey=`${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const hName=holidays.get(hdKey)||'';
+                if(hName) td.classList.add('holiday-col');
+                td.innerHTML=`<span class="wdc-date">${day}.\u202F${month+1}.</span>`
+                    +(hName?`<span class="wdc-holiday" title="${hName}">${hName}</span>`:'');
+            } else {
+                td.classList.add('empty-day-cell');
+            }
+            dateRow.appendChild(td);
+        });
+        tbody.appendChild(dateRow);
+
+        /* ── Employee rows ── */
+        state.employees.forEach(emp=>{
+            const tr=document.createElement('tr');
+            const tdName=document.createElement('td');
+            tdName.className='emp-name-cell';
+            tdName.textContent=emp.name.split(' ')[0];
+            tr.appendChild(tdName);
+
+            week.days.forEach((day,di)=>{
+                const fri=di===4;
+                const td=document.createElement('td');
+                if(fri) td.classList.add('friday-col');
+                if(!day){ td.classList.add('empty-day-cell'); tr.appendChild(td); return; }
+
+                const key=dateKey(year,month,day);
+                const hdKey=`${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                const isHoliday=holidays.has(hdKey);
+                const shift=(state.shifts[key]||{})[emp.id]||'';
+                const locked=isLocked(key,emp.id);
+                const note=(state.notes[key]||{})[emp.id]||'';
+                if(isHoliday) td.classList.add('holiday-col');
+
+                const cell=document.createElement('div');
+                cell.className='shift-cell'+(shift?' has-shift':'');
+
+                const si=getShiftInfo(emp.weeklyHours,fri);
+                const badge=document.createElement('span');
+                badge.className=`shift-badge shift-${shift||'empty'}${locked?' is-locked':''}`;
+                badge.textContent=shift||'–';
+                let tip='';
+                if(locked){
+                    tip=shift==='R' ?`🔒 Ranní ${si.R.start}–${si.R.end}`:
+                        shift==='O' ?`🔒 Odpolední ${si.O.start}–${si.O.end}`:
+                        shift==='CD'?`🔒 Celý den ${si.CD.start}–${si.CD.end}`:'🔒 Zamknuto';
+                } else if(shift==='R')  tip=`Ranní ${si.R.start}–${si.R.end} (${fmtH(si.R.hours)}) · klik = změna`;
+                else if(shift==='O')    tip=`Odpolední ${si.O.start}–${si.O.end} (${fmtH(si.O.hours)}) · klik = změna`;
+                else if(shift==='CD')   tip=`Celý den ${si.CD.start}–${si.CD.end} (${fmtH(si.CD.hours)}) · klik = změna`;
+                else if(shift==='V')    tip='Volno · klik = změna';
+                else tip='Klikněte pro přiřazení směny';
+                badge.title=tip;
+                badge.dataset.key=key; badge.dataset.empId=emp.id;
+                badge.addEventListener('click',handleShiftClick);
+
+                const lockBtn=document.createElement('button');
+                lockBtn.className='lock-btn'+(locked?' locked':'');
+                lockBtn.textContent=locked?'🔒':'🔓';
+                lockBtn.title=locked?'Odemknout':'Zamknout (auto přeskočí)';
+                lockBtn.dataset.key=key; lockBtn.dataset.empId=emp.id;
+                lockBtn.addEventListener('click',e=>{ e.stopPropagation(); toggleLock(key,+lockBtn.dataset.empId); });
+
+                const noteBtn=document.createElement('button');
+                noteBtn.className='note-btn'+(note?' has-note':'');
+                noteBtn.textContent='✏️';
+                noteBtn.title=note?'Upravit poznámku':'Přidat poznámku';
+                noteBtn.addEventListener('click',e=>{ e.stopPropagation(); openNoteEditor(key,emp.id,noteBtn,emp.name); });
+
+                const wrap=document.createElement('span');
+                wrap.className='badge-wrap';
+                wrap.appendChild(badge);
+                if(shift){ wrap.appendChild(lockBtn); wrap.appendChild(noteBtn); }
+                cell.appendChild(wrap);
+
+                if(note){
+                    const chip=document.createElement('div');
+                    chip.className='note-chip';
+                    chip.textContent=note;
+                    chip.title='Klikněte pro úpravu';
+                    chip.addEventListener('click',e=>{ e.stopPropagation(); openNoteEditor(key,emp.id,chip,emp.name); });
+                    cell.appendChild(chip);
+                }
+                td.appendChild(cell); tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+
+    });
+}
+
+/* ═══════════════════════════════════════════
+   SHIFT CLICK
+═══════════════════════════════════════════ */
+function handleShiftClick(e){
+    const b=e.currentTarget, key=b.dataset.key, empId=+b.dataset.empId;
+    if(isLocked(key,empId)) return;
+    if(!state.shifts[key]) state.shifts[key]={};
+    const cur=state.shifts[key][empId]||'';
+    const next=SHIFT_CYCLE[(SHIFT_CYCLE.indexOf(cur)+1)%SHIFT_CYCLE.length];
+    if(next===''){
+        delete state.shifts[key][empId];
+        if(state.locks[key]){ delete state.locks[key][empId]; if(!Object.keys(state.locks[key]).length) delete state.locks[key]; }
+    } else { state.shifts[key][empId]=next; }
+    saveState(); render();
+}
+
+/* ═══════════════════════════════════════════
+   RENDER STATS
+═══════════════════════════════════════════ */
+function renderStats(){
+    const {year,month}=state;
+    const wDays=workingDays(year,month);
+    const label=`${MONTHS[month]} ${year}`;
+    document.getElementById('statsMonthLabel').textContent=label;
+    document.getElementById('printMonthLabel').textContent=label;
+
+    const grid=document.getElementById('statsGrid');
+    grid.innerHTML='';
+    let totalFund=0, totalActual=0, totalFundNoV=0;
+
+    const cards=state.employees.map(emp=>{
+        const fund=fundHours(emp,year,month);
+        let actual=0, rCnt=0, oCnt=0, cdCnt=0, vCnt=0;
+        wDays.forEach(day=>{
+            const key=dateKey(year,month,day);
+            const shift=(state.shifts[key]||{})[emp.id]||'';
+            actual+=shiftHours(shift,isFriday(year,month,day),emp.weeklyHours);
+            if(shift==='R') rCnt++;
+            else if(shift==='O') oCnt++;
+            else if(shift==='CD') cdCnt++;
+            else if(shift==='V') vCnt++;
+        });
+        totalFund+=fund; totalActual+=actual;
+        totalFundNoV += (wDays.length - vCnt) * (emp.weeklyHours/5);
+        return {emp,fund,actual,rCnt,oCnt,cdCnt};
+    });
+
+    cards.forEach(({emp,fund,actual,rCnt,oCnt,cdCnt})=>{
+        const card=document.createElement('div');
+        card.className='stat-card';
+        const diff=actual-fund;
+        const isOver=diff>0.01, isUnder=diff<-0.01;
+        const diffStr=Math.abs(diff)<0.05?`±0\u202Fh`:(diff>0?`+${fmtH(diff)}`:fmtH(diff));
+        const diffColor=isOver?'#DC2626':isUnder?'#D97706':'#006633';
+        const pct=fund>0?Math.min(actual/fund,1.2):0;
+        const siN=getShiftInfo(emp.weeklyHours,false);
+        const siF=getShiftInfo(emp.weeklyHours,true);
+        card.innerHTML=`
+            <div class="stat-emp-name">${emp.name}</div>
+            <div class="stat-times">
+                <div class="st-row st-R">R&nbsp;${siN.R.start}–${siN.R.end} <span>${fmtH(siN.R.hours)}</span></div>
+                <div class="st-row st-O">O&nbsp;${siN.O.start}–${siN.O.end} <span>${fmtH(siN.O.hours)}</span>
+                    <span class="st-fri">· Pá –${siF.O.end} (${fmtH(siF.O.hours)})</span></div>
+            </div>
+            <div class="stat-row"><span>Fond hodin:</span><span>${fmtH(fund)}</span></div>
+            <div class="stat-row"><span>Odpracováno:</span><span>${fmtH(actual)}</span></div>
+            <div class="stat-row"><span>Rozdíl:</span><span style="color:${diffColor}">${diffStr}</span></div>
+            <div class="stat-row"><span>Úvazek:</span><span>${emp.weeklyHours}\u202Fh/týden</span></div>
+            <div class="stat-shifts">
+                <div class="ss-badge ss-R">R: ${rCnt}×</div>
+                <div class="ss-badge ss-O">O: ${oCnt}×</div>
+                ${cdCnt>0?`<div class="ss-badge ss-CD">CD: ${cdCnt}×</div>`:''}
+            </div>
+            <div class="prog-bar"><div class="prog-fill ${isOver?'over':''}" style="width:${(pct*100).toFixed(1)}%"></div></div>`;
+        grid.appendChild(card);
+    });
+
+    /* Total card */
+    const total=document.createElement('div');
+    total.className='stat-card stat-card-total';
+    const adjustedFund = totalFundNoV;
+    const tPct=adjustedFund>0?Math.min(totalActual/adjustedFund,1.2):0;
+    total.innerHTML=`
+        <div class="stat-emp-name">✚ Celá lékárna</div>
+        <div class="stat-row"><span>Pracovní dny:</span><span>${wDays.length} dní</span></div>
+        <div class="stat-row"><span>Fond celkem:</span><span>${fmtH(adjustedFund)}</span></div>
+        <div class="stat-row"><span>Zbývá naplánovat:</span><span>${fmtH(Math.max(0,adjustedFund-totalActual))}</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${(tPct*100).toFixed(1)}%"></div></div>`;
+    grid.appendChild(total);
+}
+
+/* ═══════════════════════════════════════════
+   AUTO GENERATE
+═══════════════════════════════════════════ */
+function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+}
+function autoGenerate(){
+    const {year,month}=state;
+    const wDays=workingDays(year,month);
+    const rCnt={}, oCnt={}, oFriCnt={};
+    state.employees.forEach(e=>{ rCnt[e.id]=0; oCnt[e.id]=0; oFriCnt[e.id]=0; });
+
+    // Seed counts from locked shifts
+    wDays.forEach(day=>{
+        const key=dateKey(year,month,day);
+        const fri=isFriday(year,month,day);
+        state.employees.forEach(e=>{
+            if(isLocked(key,e.id)){
+                const s=(state.shifts[key]||{})[e.id]||'';
+                if(s==='R') rCnt[e.id]++;
+                else if(s==='O'){ oCnt[e.id]++; if(fri) oFriCnt[e.id]++; }
+            }
+        });
+    });
+
+    const holidays=getHolidays(year);
+
+    wDays.forEach(day=>{
+        const key=dateKey(year,month,day);
+        if(!state.shifts[key]) state.shifts[key]={};
+        const hdKey=`${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const isHoliday=holidays.has(hdKey);
+        const dayLocks=state.locks[key]||{};
+
+        // On public holidays set all unlocked employees to V
+        if(isHoliday){
+            state.employees.forEach(e=>{
+                if(!dayLocks[e.id]) state.shifts[key][e.id]='V';
+            });
+            return;
+        }
+
+        const fri=isFriday(year,month,day);
+        let lockedR=0, lockedO=0;
+        state.employees.forEach(e=>{
+            if(dayLocks[e.id]){
+                const s=state.shifts[key][e.id]||'';
+                if(s==='R') lockedR++; else if(s==='O') lockedO++;
+            }
+        });
+        const free=shuffle([...state.employees].filter(e=>!dayLocks[e.id]));
+        const minODay = fri ? 1 : MIN_O;
+        const oSlots=Math.max(0, minODay - lockedO);
+        const sorted=free.sort((a,b)=>{
+            if(fri){
+                const df=oFriCnt[a.id]-oFriCnt[b.id];
+                if(df!==0) return df;
+            }
+            const da=rCnt[a.id]-oCnt[a.id], db=rCnt[b.id]-oCnt[b.id];
+            return db-da;
+        });
+        sorted.slice(0,oSlots).forEach(e=>{
+            state.shifts[key][e.id]='O';
+            oCnt[e.id]++;
+            if(fri) oFriCnt[e.id]++;
+        });
+        sorted.slice(oSlots).forEach(e=>{ state.shifts[key][e.id]='R'; rCnt[e.id]++; });
+    });
+
+    saveState(); render();
+}
+
+/* ═══════════════════════════════════════════
+   CLEAR MONTH
+═══════════════════════════════════════════ */
+function clearMonth(){
+    workingDays(state.year,state.month).forEach(d=>{
+        const key=dateKey(state.year,state.month,d);
+        const dayLocks=state.locks[key]||{};
+        if(state.shifts[key]){
+            state.employees.forEach(e=>{
+                if(!dayLocks[e.id]){
+                    delete state.shifts[key][e.id];
+                    if(state.notes[key]){ delete state.notes[key][e.id]; if(!Object.keys(state.notes[key]).length) delete state.notes[key]; }
+                }
+            });
+            if(!Object.keys(state.shifts[key]).length) delete state.shifts[key];
+        }
+    });
+    saveState(); render();
+}
+
+/* ═══════════════════════════════════════════
+   EMPLOYEE MODAL
+═══════════════════════════════════════════ */
+let _empIdCounter = 0;
+function nextEmpId(){ return ++_empIdCounter; }
+
+function createEmpCard(c, empId, name, weeklyHours, dragSrcRef){
+    const idx=[...c.querySelectorAll('.emp-card')].length;
+    const isNew = empId < 0;
+    const siN=getShiftInfo(weeklyHours,false);
+    const card=document.createElement('div');
+    card.className='emp-card';
+    card.draggable=true;
+    card.dataset.empId=empId;
+    card.style.position='relative';
+    card.innerHTML=`
+        <div class="emp-card-title">
+            <span class="drag-handle" title="Přetáhni pro změnu pořadí">⠿</span>
+            <span class="emp-card-label">Zaměstnanec ${idx+1}</span>
+        </div>
+        <div class="form-row">
+            <label class="form-label">Jméno a příjmení:</label>
+            <input class="form-input" type="text" data-id="${empId}" data-field="name" value="${name}">
+        </div>
+        <div class="form-row">
+            <label class="form-label">Týdenní úvazek:</label>
+            <input class="form-input" type="number" data-id="${empId}" data-field="weeklyHours"
+                value="${weeklyHours}" min="4" max="40" step="0.5" style="max-width:70px">
+            <span class="form-hint">h/týden &nbsp;→ R: ${siN.R.start}–${siN.R.end} &nbsp;O: ${siN.O.start}–${siN.O.end}</span>
+        </div>
+        <button class="emp-remove-btn" title="Odebrat zaměstnance">&#10005;</button>`;
+
+    // remove button
+    card.querySelector('.emp-remove-btn').addEventListener('click',()=>{
+        card.remove();
+        c.querySelectorAll('.emp-card').forEach((c2,i)=>{
+            const lbl=c2.querySelector('.emp-card-label');
+            if(lbl) lbl.textContent=`Zaměstnanec ${i+1}`;
+        });
+    });
+
+    // live preview
+    card.querySelector('input[data-field="weeklyHours"]').addEventListener('input', function(){
+        const v=parseFloat(this.value);
+        if(!isNaN(v)&&v>0){
+            const si=getShiftInfo(Math.min(v,40),false);
+            const hint=this.parentElement.querySelector('.form-hint');
+            if(hint) hint.textContent=`h/týden → R: ${si.R.start}–${si.R.end}  O: ${si.O.start}–${si.O.end}`;
+        }
+    });
+
+    // drag-and-drop
+    card.addEventListener('dragstart',e=>{
+        dragSrcRef.card=card;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move';
+    });
+    card.addEventListener('dragend',()=>{
+        card.classList.remove('dragging');
+        c.querySelectorAll('.emp-card').forEach(c2=>c2.classList.remove('drag-over'));
+        c.querySelectorAll('.emp-card').forEach((c2,i)=>{
+            const lbl=c2.querySelector('.emp-card-label');
+            if(lbl) lbl.textContent=`Zaměstnanec ${i+1}`;
+        });
+    });
+    card.addEventListener('dragover',e=>{
+        e.preventDefault(); e.dataTransfer.dropEffect='move';
+        if(card!==dragSrcRef.card) card.classList.add('drag-over');
+    });
+    card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop',e=>{
+        e.preventDefault();
+        if(!dragSrcRef.card||dragSrcRef.card===card) return;
+        card.classList.remove('drag-over');
+        const cards=[...c.querySelectorAll('.emp-card')];
+        const fromIdx=cards.indexOf(dragSrcRef.card);
+        const toIdx=cards.indexOf(card);
+        if(fromIdx<toIdx) card.after(dragSrcRef.card);
+        else card.before(dragSrcRef.card);
+    });
+
+    c.appendChild(card);
+}
+
+function openEmpModal(){
+    const c=document.getElementById('empFormContainer');
+    c.innerHTML='';
+    const dragSrcRef={card:null};
+    state.employees.forEach(emp=>{
+        createEmpCard(c, emp.id, emp.name, emp.weeklyHours, dragSrcRef);
+    });
+    document.getElementById('addEmpBtn').onclick=()=>{
+        const newId = -(Date.now());
+        createEmpCard(c, newId, '', 40, dragSrcRef);
+        c.querySelector(`.emp-card[data-emp-id="${newId}"] input[data-field="name"]`).focus();
+    };
+    document.getElementById('empModal').classList.add('active');
+}
+
+function saveEmpChanges(){
+    const maxId=state.employees.reduce((m,e)=>Math.max(m,e.id),0);
+    let nextId=maxId;
+    const newOrder=[];
+    document.querySelectorAll('#empFormContainer .emp-card').forEach(card=>{
+        const id=+card.dataset.empId;
+        let emp=state.employees.find(e=>e.id===id);
+        if(!emp){
+            emp={id:++nextId, name:'Nový zaměstnanec', weeklyHours:40};
+        }
+        card.querySelectorAll('input').forEach(inp=>{
+            if(inp.dataset.field==='weeklyHours'){ const v=parseFloat(inp.value); emp.weeklyHours=(!isNaN(v)&&v>0)?Math.min(v,40):40; }
+            else if(inp.dataset.field==='name')  { const v=inp.value.trim(); if(v) emp.name=v; }
+        });
+        newOrder.push(emp);
+    });
+
+    // Smaž data odebraných zaměstnanců ze směn, zámků a poznámek
+    const newIds=new Set(newOrder.map(e=>e.id));
+    const removedIds=state.employees.filter(e=>!newIds.has(e.id)).map(e=>e.id);
+    if(removedIds.length){
+        [state.shifts, state.locks, state.notes].forEach(store=>{
+            Object.keys(store).forEach(key=>{
+                removedIds.forEach(id=>{ delete store[key][id]; });
+                if(!Object.keys(store[key]).length) delete store[key];
+            });
+        });
+    }
+
+    state.employees=newOrder;
+    saveState(); render();
+    document.getElementById('empModal').classList.remove('active');
+}
+
+/* ═══════════════════════════════════════════
+   CONFIRM MODAL
+═══════════════════════════════════════════ */
+function showConfirm(title,msg,onOk){
+    document.getElementById('confirmTitle').textContent=title;
+    document.getElementById('confirmMsg').textContent=msg;
+    document.getElementById('confirmModal').classList.add('active');
+    const old=document.getElementById('confirmOk');
+    const btn=old.cloneNode(true); old.replaceWith(btn);
+    btn.addEventListener('click',()=>{ document.getElementById('confirmModal').classList.remove('active'); onOk(); });
+}
+
+/* ═══════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════ */
+function render(){ renderSchedule(); renderStats(); }
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+function init(){
+    loadState();
+    initNav();
+
+    /* note editor */
+    document.getElementById('noteSaveBtn').addEventListener('click',   saveCurrentNote);
+    document.getElementById('noteDeleteBtn').addEventListener('click', deleteCurrentNote);
+    document.getElementById('noteCancelBtn').addEventListener('click', closeNoteEditor);
+    document.getElementById('noteTextarea').addEventListener('keydown',e=>{
+        if(e.key==='Escape') closeNoteEditor();
+        if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) saveCurrentNote();
+    });
+
+    /* print / PDF */
+    document.getElementById('printBtn').addEventListener('click', ()=>window.print());
+
+    /* auto-generate */
+    document.getElementById('autoGenBtn').addEventListener('click',()=>{
+        const wDays=workingDays(state.year,state.month);
+        let lk=0; wDays.forEach(d=>{ const k=dateKey(state.year,state.month,d); lk+=Object.keys(state.locks[k]||{}).length; });
+        showConfirm('✨ Automatické plánování',
+            `Přepsat volné směny za ${MONTHS[state.month]} ${state.year}?`+(lk?` Zamčených: ${lk}.`:''),
+            autoGenerate);
+    });
+
+    /* clear */
+    document.getElementById('clearBtn').addEventListener('click',()=>{
+        const wDays=workingDays(state.year,state.month);
+        let lk=0; wDays.forEach(d=>{ const k=dateKey(state.year,state.month,d); lk+=Object.keys(state.locks[k]||{}).length; });
+        showConfirm('🗑️ Vymazat měsíc',
+            `Vymazat volné směny za ${MONTHS[state.month]} ${state.year}?`+(lk?` Zamčené (${lk}) zůstanou.`:''),
+            clearMonth);
+    });
+
+    /* employee modal */
+    document.getElementById('empSettingsBtn').addEventListener('click', openEmpModal);
+    document.getElementById('closeEmpModal').addEventListener('click',  ()=>document.getElementById('empModal').classList.remove('active'));
+    document.getElementById('cancelEmpBtn').addEventListener('click',   ()=>document.getElementById('empModal').classList.remove('active'));
+    document.getElementById('saveEmpBtn').addEventListener('click',     saveEmpChanges);
+
+    /* confirm modal */
+    document.getElementById('closeConfirmModal').addEventListener('click', ()=>document.getElementById('confirmModal').classList.remove('active'));
+    document.getElementById('confirmCancel').addEventListener('click',     ()=>document.getElementById('confirmModal').classList.remove('active'));
+
+    /* close on backdrop */
+    document.querySelectorAll('.modal-overlay').forEach(el=>{
+        el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('active'); });
+    });
+
+    /* close note editor on outside click */
+    document.addEventListener('click',e=>{
+        const ed=document.getElementById('noteEditor');
+        if(ed.style.display!=='none'&&!ed.contains(e.target)) closeNoteEditor();
+    });
+
+    render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+<footer style="text-align:center; padding: 18px 0 12px; font-size: .72rem; color: #94A3B8; letter-spacing: .04em;">
+    Created by Denis Šmida
+</footer>
+</body>
+</html>
