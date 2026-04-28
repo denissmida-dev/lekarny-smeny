@@ -29,11 +29,11 @@
             --celyday-bg:     #EDE9FE;
             --celyday-text:   #6D28D9;
             --celyday-border: #C4B5FD;
-            --vacation-bg:    #F1F5F9;
-            --vacation-text:  #475569;
-            --vacation-border:#CBD5E1;
-            --holiday-bg:     #FFF1F2;
-            --holiday-text:   #BE123C;
+            --vacation-bg:    #F8F8F8;
+            --vacation-text:  #555555;
+            --vacation-border:#CCCCCC;
+            --holiday-bg:     #DCDCDC;
+            --holiday-text:   #222222;
             --bg:             #F2F8F4;
             --white:          #FFFFFF;
             --border:         #C8DDD0;
@@ -190,8 +190,8 @@
         }
         .schedule-table th:last-child { border-right: none; }
         .schedule-table th.th-name { text-align: left; padding-left: 8px; font-size: .7rem; }
-        .schedule-table th.fri-header { color: #FFD580; }
-        .schedule-table th.holiday-header { background: rgba(190,18,60,.35) !important; }
+        .schedule-table th.fri-header { color: #ffffff; }
+        .schedule-table th.holiday-header { background: rgba(0,0,0,.25) !important; }
         .schedule-table th.th-week-start { border-left: 2px solid rgba(255,255,255,.3) !important; }
         .th-day  { display: block; font-size: .6rem; opacity: .85; }
         .th-date { display: block; font-size: .68rem; font-weight: 800; }
@@ -202,24 +202,24 @@
             text-align: center; vertical-align: middle;
         }
         .schedule-table tr:last-child td { border-bottom: none; }
-        .schedule-table tr:nth-child(even) td { background: var(--green-xlight); }
+        .schedule-table tr:nth-child(even) td { background: #F2F2F2; }
 
         .schedule-table td.friday-col  { }
-        .schedule-table td.holiday-col { background: var(--holiday-bg) !important; }
+        .schedule-table td.holiday-col { }
         .schedule-table td.empty-day-cell { background: #F4F7F5 !important; }
 
         /* Week date header rows */
         .week-date-row td {
-            background: var(--green-light) !important;
-            border-top: 2px solid var(--border);
-            border-bottom: 1px solid var(--border);
+            background: #E4E4E4 !important;
+            border-top: 2px solid #BBBBBB;
+            border-bottom: 1px solid #CCCCCC;
             padding: 5px 4px;
             height: 38px;
         }
         .week-date-row:first-child td { border-top: none; }
         .week-date-label { text-align: left; padding-left: 8px !important; }
         .week-date-cell  { text-align: center; }
-        .wdc-date    { display: block; font-size: 1.05rem; font-weight: 800; color: var(--green); }
+        .wdc-date    { display: block; font-size: 1.05rem; font-weight: 800; color: #222222; }
         .wdc-holiday { display: block; font-size: .56rem; color: var(--holiday-text);
                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -227,10 +227,10 @@
             font-size: .82rem; font-weight: 700;
             padding: 4px 8px; text-align: left; white-space: nowrap;
             color: var(--text);
-            background: var(--green-xlight) !important;
-            border-right: 2px solid var(--border-light);
+            background: #EEEEEE !important;
+            border-right: 2px solid #CCCCCC;
         }
-        .count-row td { background: var(--green-xlight) !important; }
+        .count-row td { background: #EEEEEE !important; }
         .count-label  { font-size: .76rem; font-weight: 700; color: var(--muted); }
 
         /* ── SHIFT CELL ─────────────────────────── */
@@ -499,7 +499,7 @@
                 margin: 7mm 7mm;
             }
 
-            body { background: #fff !important; font-size: 9px; }
+            body { background: #fff !important; font-size: 9px; zoom: 0.80; }
 
             /* hide interactive UI */
             .header, .toolbar, #noteEditor, .modal-overlay,
@@ -520,20 +520,20 @@
                 overflow: visible;
                 min-width: unset;
             }
-            .table-wrapper { height: 172mm; display: flex; flex-direction: column; }
+            .table-wrapper { height: 228mm; display: flex; flex-direction: column; overflow: hidden; }
             .schedule-table { height: 100%; }
-            .schedule-table th { font-size: .52rem; padding: 3px 1px; }
-            .schedule-table td { padding: 2px 1px; border-color: #ddd; }
-            .shift-badge { width: 22px; height: 18px; font-size: .62rem; border-radius: 3px; }
-            .note-chip { font-size: .5rem; max-width: 70px; padding: 1px 3px; }
+            .schedule-table th { font-size: .52rem; padding: 2px 1px; }
+            .schedule-table td { padding: 1px 0px; border-color: #ddd; }
+            .shift-badge { width: 18px; height: 20px; font-size: 1.05rem; font-weight: 900; border-radius: 3px; background: transparent !important; color: #111 !important; border-color: transparent !important; }
+            .note-chip { font-size: .5rem; max-width: 140px; padding: 1px 3px; }
             .emp-name-cell { font-size: .62rem; padding: 2px 4px; }
             .cnt-cell, .status-cell { font-size: .52rem; }
             .th-day  { font-size: .5rem; }
             .th-date { font-size: .58rem; }
             .holiday-name { font-size: .5rem; max-width: 40px; }
-            .wdc-date     { font-size: .68rem; }
-            .wdc-holiday  { font-size: .52rem; }
-            .week-date-row td { height: auto !important; padding: 2px 4px; }
+            .wdc-date     { font-size: .95rem; font-weight: 900; }
+            .wdc-holiday  { font-size: .55rem; }
+            .week-date-row td { height: auto !important; padding: 4px 3px; border-top: 2.5px solid #666 !important; border-bottom: 1.5px solid #999 !important; }
 
             tr { page-break-inside: avoid; }
             thead { display: table-header-group; }
@@ -593,11 +593,7 @@
 
 <!-- ── Print header (hidden on screen, visible when printing) ── -->
 <div class="print-only print-header">
-    <div class="ph-logo">✚ Lékárna</div>
-    <div class="ph-meta">
-        <h2>Plán směn – Lékárna</h2>
-        <p id="printMonthLabel"></p>
-    </div>
+    <p id="printMonthLabel"></p>
 </div>
 
 <div id="app">
